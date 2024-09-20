@@ -44,12 +44,12 @@ public class FuncionarioController : ControllerBase
     public IActionResult Criar(Funcionario funcionario)
     {
         _context.Funcionarios.Add(funcionario);
-        // TODO: Chamar o método SaveChanges do _context para salvar no Banco SQL
+        _context.SaveChanges(); // Persistir no banco SQL
 
         var tableClient = GetTableClient();
         var funcionarioLog = new FuncionarioLog(funcionario, TipoAcao.Inclusao, funcionario.Departamento, Guid.NewGuid().ToString());
 
-        // TODO: Chamar o método UpsertEntity para salvar no Azure Table
+        tableClient.UpsertEntity(funcionarioLog); // Salvar no Azure Table Storage
 
         return CreatedAtAction(nameof(ObterPorId), new { id = funcionario.Id }, funcionario);
     }
@@ -62,17 +62,19 @@ public class FuncionarioController : ControllerBase
         if (funcionarioBanco == null)
             return NotFound();
 
+        // Atualizar as propriedades necessárias
         funcionarioBanco.Nome = funcionario.Nome;
         funcionarioBanco.Endereco = funcionario.Endereco;
-        // TODO: As propriedades estão incompletas
+        funcionarioBanco.Departamento = funcionario.Departamento;
+        // Adicione as demais propriedades conforme necessário
 
-        // TODO: Chamar o método de Update do _context.Funcionarios para salvar no Banco SQL
-        _context.SaveChanges();
+        _context.Funcionarios.Update(funcionarioBanco);
+        _context.SaveChanges(); // Persistir as mudanças no banco SQL
 
         var tableClient = GetTableClient();
         var funcionarioLog = new FuncionarioLog(funcionarioBanco, TipoAcao.Atualizacao, funcionarioBanco.Departamento, Guid.NewGuid().ToString());
 
-        // TODO: Chamar o método UpsertEntity para salvar no Azure Table
+        tableClient.UpsertEntity(funcionarioLog); // Salvar log no Azure Table Storage
 
         return Ok();
     }
@@ -85,13 +87,13 @@ public class FuncionarioController : ControllerBase
         if (funcionarioBanco == null)
             return NotFound();
 
-        // TODO: Chamar o método de Remove do _context.Funcionarios para salvar no Banco SQL
-        _context.SaveChanges();
+        _context.Funcionarios.Remove(funcionarioBanco);
+        _context.SaveChanges(); // Persistir a exclusão no banco SQL
 
         var tableClient = GetTableClient();
         var funcionarioLog = new FuncionarioLog(funcionarioBanco, TipoAcao.Remocao, funcionarioBanco.Departamento, Guid.NewGuid().ToString());
 
-        // TODO: Chamar o método UpsertEntity para salvar no Azure Table
+        tableClient.UpsertEntity(funcionarioLog); // Salvar log no Azure Table Storage
 
         return NoContent();
     }
